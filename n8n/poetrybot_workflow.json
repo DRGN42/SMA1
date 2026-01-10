@@ -1,0 +1,149 @@
+{
+  "name": "Poetrybot: Scrape → Analyze → XTTS → Flux → Render",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual_trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://runner:8000/scrape",
+        "method": "POST",
+        "jsonParameters": true,
+        "options": {
+          "timeout": 300000,
+          "ignoreResponseCode": true
+        },
+        "bodyParametersJson": "={\n  \"url\": \"https://hor.de/gedichte/gedicht.php\",\n  \"language\": \"de\",\n  \"avoid_processed\": true,\n  \"max_attempts\": 5\n}"
+      },
+      "id": "scrape",
+      "name": "Scrape",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{$json[\"statusCode\"]}}",
+              "operation": "equal",
+              "value2": 404
+            }
+          ]
+        }
+      },
+      "id": "if_no_poem",
+      "name": "IF No Poem",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [620, 300]
+    },
+    {
+      "parameters": {
+        "mode": "passThrough"
+      },
+      "id": "end_no_poem",
+      "name": "No New Poem (Stop)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [820, 180]
+    },
+    {
+      "parameters": {
+        "url": "http://runner:8000/analyze",
+        "method": "POST",
+        "jsonParameters": true,
+        "options": {
+          "timeout": 300000
+        },
+        "bodyParametersJson": "={\n  \"url\": {{$json[\"poem\"][\"url\"]}},\n  \"title\": {{$json[\"poem\"][\"title\"]}},\n  \"author\": {{$json[\"poem\"][\"author\"]}},\n  \"text\": {{$json[\"poem\"][\"text\"]}},\n  \"language\": {{$json[\"poem\"][\"language\"]}},\n  \"url_hash\": {{$json[\"url_hash\"]}},\n  \"model\": \"gpt-oss-20b\"\n}"
+      },
+      "id": "analyze",
+      "name": "Analyze",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [820, 420]
+    },
+    {
+      "parameters": {
+        "url": "http://runner:8000/tts",
+        "method": "POST",
+        "jsonParameters": true,
+        "options": {
+          "timeout": 300000
+        },
+        "bodyParametersJson": "={\n  \"url\": {{$json[\"url\"]}},\n  \"title\": {{$json[\"title\"]}},\n  \"author\": {{$json[\"author\"]}},\n  \"text\": {{$json[\"narration_text\"]}},\n  \"language\": \"de\",\n  \"url_hash\": {{$json[\"url_hash\"]}}\n}"
+      },
+      "id": "tts",
+      "name": "XTTS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1040, 420]
+    },
+    {
+      "parameters": {
+        "url": "http://flux:9000/generate_from_analysis",
+        "method": "POST",
+        "jsonParameters": true,
+        "options": {
+          "timeout": 900000
+        },
+        "bodyParametersJson": "={\n  \"url_hash\": {{$json[\"url_hash\"]}},\n  \"analysis_path\": {{$node[\"Analyze\"].json[\"analysis_path\"]}},\n  \"width\": 768,\n  \"height\": 1344,\n  \"steps\": 12\n}"
+      },
+      "id": "flux",
+      "name": "Flux Images",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1260, 420]
+    },
+    {
+      "parameters": {
+        "url": "http://runner:8000/render",
+        "method": "POST",
+        "jsonParameters": true,
+        "options": {
+          "timeout": 600000
+        },
+        "bodyParametersJson": "={\n  \"url_hash\": {{$node[\"Analyze\"].json[\"url_hash\"]}},\n  \"audio_path\": {{$node[\"XTTS\"].json[\"audio_path\"]}},\n  \"segments_path\": {{$node[\"XTTS\"].json[\"segments_path\"]}},\n  \"images_manifest_path\": {{$node[\"Flux Images\"].json[\"images_manifest_path\"]}},\n  \"poem_path\": {{$node[\"Scrape\"].json[\"poem_path\"]}}\n}"
+      },
+      "id": "render",
+      "name": "Render",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1480, 420]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{"node": "Scrape", "type": "main", "index": 0}]]
+    },
+    "Scrape": {
+      "main": [[{"node": "IF No Poem", "type": "main", "index": 0}]]
+    },
+    "IF No Poem": {
+      "main": [
+        [{"node": "No New Poem (Stop)", "type": "main", "index": 0}],
+        [{"node": "Analyze", "type": "main", "index": 0}]
+      ]
+    },
+    "Analyze": {
+      "main": [[{"node": "XTTS", "type": "main", "index": 0}]]
+    },
+    "XTTS": {
+      "main": [[{"node": "Flux Images", "type": "main", "index": 0}]]
+    },
+    "Flux Images": {
+      "main": [[{"node": "Render", "type": "main", "index": 0}]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "timezone": "Europe/Berlin"
+  }
+}
