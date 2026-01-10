@@ -62,7 +62,7 @@
         "options": {
           "timeout": 300000
         },
-        "bodyParametersJson": "={\n  \"url\": {{$json[\"poem\"][\"url\"]}},\n  \"title\": {{$json[\"poem\"][\"title\"]}},\n  \"author\": {{$json[\"poem\"][\"author\"]}},\n  \"text\": {{$json[\"poem\"][\"text\"]}},\n  \"language\": {{$json[\"poem\"][\"language\"]}},\n  \"url_hash\": {{$json[\"url_hash\"]}},\n  \"model\": \"openai/gpt-oss-20b\"\n}"
+        "bodyParametersJson": "={\n  \"url\": {{$json[\"poem\"][\"url\"]}},\n  \"title\": {{$json[\"poem\"][\"title\"]}},\n  \"author\": {{$json[\"poem\"][\"author\"]}},\n  \"text\": {{$json[\"poem\"][\"text\"]}},\n  \"language\": {{$json[\"poem\"][\"language\"]}},\n  \"url_hash\": {{$json[\"url_hash\"]}},\n  \"model\": \"gpt-oss-20b\"\n}"
       },
       "id": "analyze",
       "name": "Analyze",
