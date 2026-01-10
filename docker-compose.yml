@@ -30,7 +30,7 @@ services:
       GENERIC_TIMEZONE: Europe/Berlin
     volumes:
       - n8n_data:/home/node/.n8n
-      - /opt/poetrybot:/opt/poetrybot
+      - ${POETRYBOT_ROOT:-/opt/poetrybot}:/opt/poetrybot
     depends_on:
       - postgres
 
@@ -51,7 +51,7 @@ services:
       COQUI_TOS_AGREED: ${COQUI_TOS_AGREED}
       POETRYBOT_ROOT: /opt/poetrybot
     volumes:
-      - /opt/poetrybot:/opt/poetrybot
+      - ${POETRYBOT_ROOT:-/opt/poetrybot}:/opt/poetrybot
       - /var/run/docker.sock:/var/run/docker.sock
     deploy:
       resources:
@@ -70,8 +70,8 @@ services:
       HUGGINGFACE_HUB_TOKEN: ${HUGGINGFACE_HUB_TOKEN}
       FLUX_MODEL_ID: ${FLUX_MODEL_ID}
     volumes:
-      - /opt/poetrybot:/opt/poetrybot
-      - /opt/poetrybot/models:/root/.cache/huggingface
+      - ${POETRYBOT_ROOT:-/opt/poetrybot}:/opt/poetrybot
+      - ${POETRYBOT_ROOT:-/opt/poetrybot}/models:/root/.cache/huggingface
     deploy:
       resources:
         reservations:
