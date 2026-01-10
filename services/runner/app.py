@@ -99,22 +99,17 @@ async def analyze(req: AnalyzeRequest) -> Dict[str, Any]:
     model = req.model or os.environ.get("LMSTUDIO_MODEL", "gpt-oss-20b")
 
     client = OpenAI(base_url=base_url, api_key="lm-studio")
-    try:
-        logger.info("Analyzing with model=%s base_url=%s", model, base_url)
-        completion = client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": prompt["system"]},
-                {"role": "user", "content": prompt["user"]},
-            ],
-            temperature=0.4,
-            max_tokens=2000,
-        )
-        raw_text = completion.choices[0].message.content
-        analysis = _extract_json(raw_text)
-    except Exception as exc:
-        logger.exception("Analyze failed")
-        raise HTTPException(status_code=500, detail=f"Analyze failed: {exc}") from exc
+    completion = client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": prompt["system"]},
+            {"role": "user", "content": prompt["user"]},
+        ],
+        temperature=0.4,
+        max_tokens=2000,
+    )
+    raw_text = completion.choices[0].message.content
+    analysis = _extract_json(raw_text)
 
     analysis_path = outputs_dir() / "logs" / f"analysis_{req.url_hash}.json"
     write_json(analysis_path, analysis)
@@ -125,11 +120,7 @@ async def analyze(req: AnalyzeRequest) -> Dict[str, Any]:
 @app.post("/tts")
 async def tts(req: TTSRequest) -> Dict[str, Any]:
     output_dir = ensure_dir(outputs_dir() / "audio" / req.url_hash)
-    try:
-        payload = synthesize_segments(req.dict(), output_dir)
-    except Exception as exc:
-        logger.exception("TTS failed")
-        raise HTTPException(status_code=500, detail=f"TTS failed: {exc}") from exc
+    payload = synthesize_segments(req.dict(), output_dir)
     mark_state(req.url_hash, "tts_done")
     return payload
 
@@ -167,9 +158,6 @@ def _extract_json(raw_text: str) -> Dict[str, Any]:
         start = raw_text.find("{")
         end = raw_text.rfind("}")
         if start == -1 or end == -1:
-            raise HTTPException(
-                status_code=500,
-                detail=f"LLM returned no JSON. Raw: {raw_text[:500]}",
-            )
+            raise HTTPException(status_code=500, detail="LLM returned no JSON")
         payload = raw_text[start : end + 1]
         return json.loads(payload)
