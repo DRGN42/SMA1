@@ -22,6 +22,10 @@ def _segment_lines(text: str) -> List[str]:
 def synthesize_segments(poem: Dict, output_dir: Path) -> Dict:
     speaker_wav = os.environ.get("COQUI_SPEAKER_WAVS")
     language = os.environ.get("COQUI_LANGUAGE", "de")
+    if not speaker_wav:
+        raise ValueError("COQUI_SPEAKER_WAVS is not set.")
+    if not Path(speaker_wav).exists():
+        raise FileNotFoundError(f"Speaker wav not found: {speaker_wav}")
 
     lines = _segment_lines(poem["text"])
     ensure_dir(output_dir)
