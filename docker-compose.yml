@@ -49,7 +49,7 @@ services:
       COQUI_LANGUAGE: ${COQUI_LANGUAGE}
       COQUI_USE_CUDA: ${COQUI_USE_CUDA}
       COQUI_TOS_AGREED: ${COQUI_TOS_AGREED}
-      POETRYBOT_ROOT: /opt/poetrybot
+      POETRYBOT_ROOT: ${POETRYBOT_ROOT:-/opt/poetrybot}
     volumes:
       - ${POETRYBOT_ROOT:-/opt/poetrybot}:/opt/poetrybot
       - /var/run/docker.sock:/var/run/docker.sock
