@@ -69,6 +69,8 @@ services:
     environment:
       HUGGINGFACE_HUB_TOKEN: ${HUGGINGFACE_HUB_TOKEN}
       FLUX_MODEL_ID: ${FLUX_MODEL_ID}
+      HF_HUB_DISABLE_XET: ${HF_HUB_DISABLE_XET}
+      HF_HUB_ENABLE_HF_TRANSFER: ${HF_HUB_ENABLE_HF_TRANSFER}
     volumes:
       - ${POETRYBOT_ROOT:-/opt/poetrybot}:/opt/poetrybot
       - ${POETRYBOT_ROOT:-/opt/poetrybot}/models:/root/.cache/huggingface
