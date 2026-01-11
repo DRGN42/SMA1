@@ -1,0 +1,87 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: n8n
+      POSTGRES_PASSWORD: n8n
+      POSTGRES_DB: n8n
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  n8n:
+    image: n8nio/n8n:1.48.1
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      N8N_HOST: 0.0.0.0
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: n8n
+      DB_POSTGRESDB_USER: n8n
+      DB_POSTGRESDB_PASSWORD: n8n
+      GENERIC_TIMEZONE: Europe/Berlin
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ${POETRYBOT_ROOT:-/opt/poetrybot}:/opt/poetrybot
+    depends_on:
+      - postgres
+
+  runner:
+    build:
+      context: .
+      dockerfile: docker/runner/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      LMSTUDIO_BASE_URL: ${LMSTUDIO_BASE_URL}
+      LMSTUDIO_MODEL: ${LMSTUDIO_MODEL}
+      COQUI_MODEL_NAME: ${COQUI_MODEL_NAME}
+      COQUI_SPEAKER_WAVS: ${COQUI_SPEAKER_WAVS}
+      COQUI_LANGUAGE: ${COQUI_LANGUAGE}
+      COQUI_USE_CUDA: ${COQUI_USE_CUDA}
+      COQUI_TOS_AGREED: ${COQUI_TOS_AGREED}
+      POETRYBOT_ROOT: /opt/poetrybot
+    volumes:
+      - ${POETRYBOT_ROOT:-/opt/poetrybot}:/opt/poetrybot
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+
+  flux:
+    build:
+      context: .
+      dockerfile: docker/flux/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    environment:
+      HUGGINGFACE_HUB_TOKEN: ${HUGGINGFACE_HUB_TOKEN}
+      FLUX_MODEL_ID: ${FLUX_MODEL_ID}
+      HF_HUB_DISABLE_XET: ${HF_HUB_DISABLE_XET}
+      HF_HUB_ENABLE_HF_TRANSFER: ${HF_HUB_ENABLE_HF_TRANSFER}
+      HF_HUB_DOWNLOAD_TIMEOUT: ${HF_HUB_DOWNLOAD_TIMEOUT}
+      HF_HUB_ETAG_TIMEOUT: ${HF_HUB_ETAG_TIMEOUT}
+    volumes:
+      - ${POETRYBOT_ROOT:-/opt/poetrybot}:/opt/poetrybot
+      - ${POETRYBOT_ROOT:-/opt/poetrybot}/models:/root/.cache/huggingface
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+
+volumes:
+  postgres_data:
+  n8n_data:
