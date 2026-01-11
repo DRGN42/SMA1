@@ -30,7 +30,7 @@ services:
       GENERIC_TIMEZONE: Europe/Berlin
     volumes:
       - n8n_data:/home/node/.n8n
-      - ${POETRYBOT_ROOT:-/opt/poetrybot}:/opt/poetrybot
+      - ${POETRYBOT_MOUNT:-/opt/poetrybot}:/opt/poetrybot
     depends_on:
       - postgres
 
@@ -49,9 +49,10 @@ services:
       COQUI_LANGUAGE: ${COQUI_LANGUAGE}
       COQUI_USE_CUDA: ${COQUI_USE_CUDA}
       COQUI_TOS_AGREED: ${COQUI_TOS_AGREED}
-      POETRYBOT_ROOT: ${POETRYBOT_ROOT:-/opt/poetrybot}
+      POETRYBOT_ROOT: /opt/poetrybot
+      POETRYBOT_MOUNT: ${POETRYBOT_MOUNT:-/opt/poetrybot}
     volumes:
-      - ${POETRYBOT_ROOT:-/opt/poetrybot}:/opt/poetrybot
+      - ${POETRYBOT_MOUNT:-/opt/poetrybot}:/opt/poetrybot
       - /var/run/docker.sock:/var/run/docker.sock
     deploy:
       resources:
@@ -73,9 +74,11 @@ services:
       HF_HUB_ENABLE_HF_TRANSFER: ${HF_HUB_ENABLE_HF_TRANSFER}
       HF_HUB_DOWNLOAD_TIMEOUT: ${HF_HUB_DOWNLOAD_TIMEOUT:-600}
       HF_HUB_ETAG_TIMEOUT: ${HF_HUB_ETAG_TIMEOUT:-60}
+      POETRYBOT_ROOT: /opt/poetrybot
+      POETRYBOT_MOUNT: ${POETRYBOT_MOUNT:-/opt/poetrybot}
     volumes:
-      - ${POETRYBOT_ROOT:-/opt/poetrybot}:/opt/poetrybot
-      - ${POETRYBOT_ROOT:-/opt/poetrybot}/models:/root/.cache/huggingface
+      - ${POETRYBOT_MOUNT:-/opt/poetrybot}:/opt/poetrybot
+      - ${POETRYBOT_MOUNT:-/opt/poetrybot}/models:/root/.cache/huggingface
     deploy:
       resources:
         reservations:

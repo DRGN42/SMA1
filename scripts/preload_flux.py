@@ -8,7 +8,11 @@ def main() -> None:
     model_id = os.environ.get("FLUX_MODEL_ID", "black-forest-labs/FLUX.1-schnell")
     token = os.environ.get("HUGGINGFACE_HUB_TOKEN")
     poetrybot_root = Path(os.environ.get("POETRYBOT_ROOT", "/opt/poetrybot"))
-    cache_dir = Path(os.environ.get("HF_HOME", poetrybot_root / "models"))
+    mount_root = os.environ.get("POETRYBOT_MOUNT")
+    root = Path(mount_root) if mount_root else poetrybot_root
+    if mount_root and not root.exists():
+        root = poetrybot_root
+    cache_dir = Path(os.environ.get("HF_HOME", root / "models"))
 
     cache_dir.mkdir(parents=True, exist_ok=True)
 

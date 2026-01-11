@@ -18,6 +18,29 @@ app = FastAPI()
 PIPELINE = None
 
 
+def _get_root() -> Path:
+    return Path(os.environ.get("POETRYBOT_ROOT", "/opt/poetrybot"))
+
+
+def _resolve_analysis_path(analysis_path: Path) -> Path:
+    if analysis_path.exists():
+        return analysis_path
+
+    mount_root = os.environ.get("POETRYBOT_MOUNT")
+    if mount_root:
+        mount_path = Path(mount_root)
+        try:
+            relative = analysis_path.relative_to(mount_path)
+        except ValueError:
+            relative = None
+        if relative is not None:
+            candidate = _get_root() / relative
+            if candidate.exists():
+                return candidate
+
+    return analysis_path
+
+
 def _load_pipeline() -> DiffusionPipeline:
     global PIPELINE
     if PIPELINE is not None:
@@ -53,9 +76,12 @@ async def health() -> Dict[str, str]:
 
 @app.post("/generate_from_analysis")
 async def generate(req: GenerateRequest) -> Dict[str, str]:
-    analysis_path = Path(req.analysis_path)
+    analysis_path = _resolve_analysis_path(Path(req.analysis_path))
     if not analysis_path.exists():
-        raise HTTPException(status_code=404, detail="analysis not found")
+        raise HTTPException(
+            status_code=404,
+            detail=f"analysis not found at {analysis_path}",
+        )
 
     analysis = json.loads(analysis_path.read_text(encoding="utf-8"))
     visuals = analysis.get("visual", {})
@@ -66,7 +92,7 @@ async def generate(req: GenerateRequest) -> Dict[str, str]:
 
     pipeline = _load_pipeline()
 
-    output_dir = Path("/opt/poetrybot/outputs/images") / req.url_hash
+    output_dir = _get_root() / "outputs" / "images" / req.url_hash
     output_dir.mkdir(parents=True, exist_ok=True)
 
     images_meta = []
